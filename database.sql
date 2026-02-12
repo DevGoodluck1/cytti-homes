@@ -1,9 +1,9 @@
 -- Cytti Homes Database Schema
--- Run this script to create the database and tables
+-- Run this script to create the tables inside Clever Cloud database
 
--- Create database
-CREATE DATABASE IF NOT EXISTS cytti_homes;
-USE cytti_homes;
+-- IMPORTANT:
+-- Clever Cloud does not allow CREATE DATABASE on DEV plan.
+-- So we remove CREATE DATABASE and USE cytti_db.
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
