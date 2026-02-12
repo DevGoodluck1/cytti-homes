@@ -1,12 +1,12 @@
 <?php
 require_once 'config.php';
 
-// Handle error messages from register.php
-$errors = [];
-if (isset($_GET['errors'])) {
-    $errors = $_GET;
-    unset($errors['errors']);
-}
+// Handle error messages and form data from signup_process.php
+$errors = $_SESSION['signup_errors'] ?? [];
+$formData = $_SESSION['signup_data'] ?? [];
+
+// Clear session data after use
+unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -262,7 +262,7 @@ if (isset($_GET['errors'])) {
             required
             minlength="3"
             maxlength="20"
-            value="<?php echo htmlspecialchars($_POST['username'] ?? ''); ?>"
+            value="<?php echo htmlspecialchars($formData['username'] ?? ''); ?>"
           />
           <?php if (isset($errors['username'])): ?>
             <div class="error-message"><?php echo htmlspecialchars($errors['username']); ?></div>
@@ -278,7 +278,7 @@ if (isset($_GET['errors'])) {
             name="email"
             placeholder="your@email.com"
             required
-            value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+            value="<?php echo htmlspecialchars($formData['email'] ?? ''); ?>"
           />
           <?php if (isset($errors['email'])): ?>
             <div class="error-message"><?php echo htmlspecialchars($errors['email']); ?></div>

@@ -364,7 +364,7 @@
       <h1>Create Account</h1>
       <p>Join us today and get started</p>
 
-      <form action="signup_process.php" method="POST" novalidate>
+      <form action="signup_process.php" method="POST" novalidate id="signup-form">
         <!-- Username Field -->
         <div class="form-group">
           <label for="username">Username</label>
@@ -482,17 +482,11 @@
   </div>
 
   <script>
-    // Form validation and submission
-    const signupForm = document.getElementById('signup-form');
-    const submitBtn = document.getElementById('submit-btn');
+    // Password strength checker
     const passwordInput = document.getElementById('password');
     const strengthBar = document.getElementById('strength-bar');
     const strengthText = document.getElementById('password-strength-text');
 
-    // CSRF Token (in real app, get from server)
-    const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
-
-    // Password strength checker
     passwordInput.addEventListener('input', function() {
       const strength = checkPasswordStrength(this.value);
       updateStrengthBar(strength);
@@ -513,9 +507,9 @@
     function updateStrengthBar(strength) {
       const bar = document.querySelector('.password-strength-bar');
       const text = document.getElementById('password-strength-text');
-      
+
       bar.classList.remove('strength-weak', 'strength-fair', 'strength-good');
-      
+
       if (strength <= 2) {
         bar.classList.add('strength-weak');
         text.textContent = 'Password strength: Weak';
@@ -530,168 +524,6 @@
         text.style.color = '#4caf50';
       }
     }
-
-    // Form submission
-    signupForm.addEventListener('submit', function(e) {
-      e.preventDefault();
-
-      if (!validateForm()) {
-        return;
-      }
-
-      submitBtn.disabled = true;
-      submitBtn.innerHTML = '<span class="loading-spinner"></span>Signing up...';
-
-      // Simulate processing delay
-      setTimeout(() => {
-        try {
-          const username = document.getElementById('username').value.trim();
-          const email = document.getElementById('email').value.trim();
-          const password = document.getElementById('password').value;
-
-          // Get existing users
-          let users = JSON.parse(localStorage.getItem('users') || '{}');
-
-          // Check if email already exists
-          if (users[email]) {
-            showErrorModal('An account with this email already exists.');
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = 'Create Account';
-            return;
-          }
-
-          // Store new user
-          users[email] = {
-            username: username,
-            password: password,
-            createdAt: new Date().toISOString()
-          };
-
-          localStorage.setItem('users', JSON.stringify(users));
-
-          showSuccessModal();
-        } catch (error) {
-          console.error('Error:', error);
-          showErrorModal('An error occurred. Please try again.');
-          submitBtn.disabled = false;
-          submitBtn.innerHTML = 'Create Account';
-        }
-      }, 1500); // Simulate network delay
-    });
-
-    function validateForm() {
-      const username = document.getElementById('username').value.trim();
-      const email = document.getElementById('email').value.trim();
-      const password = document.getElementById('password').value;
-      const confirmPassword = document.getElementById('confirm-password').value;
-      const terms = document.getElementById('terms').checked;
-
-      let isValid = true;
-
-      // Username validation
-      if (username.length < 3) {
-        showError('username-error', 'Username must be at least 3 characters long.');
-        isValid = false;
-      } else if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-        showError('username-error', 'Username can only contain letters, numbers, hyphens, and underscores.');
-        isValid = false;
-      } else {
-        hideError('username-error');
-      }
-
-      // Email validation
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        showError('email-error', 'Please enter a valid email address.');
-        isValid = false;
-      } else {
-        hideError('email-error');
-      }
-
-      // Password validation
-      if (password.length < 8) {
-        showError('password-error', 'Password must be at least 8 characters long.');
-        isValid = false;
-      } else {
-        hideError('password-error');
-      }
-
-      // Confirm password validation
-      if (password !== confirmPassword) {
-        showError('confirm-error', 'Passwords do not match.');
-        isValid = false;
-      } else {
-        hideError('confirm-error');
-      }
-
-      // Terms validation
-      if (!terms) {
-        showError('terms-error', 'You must agree to the Terms of Service.');
-        isValid = false;
-      } else {
-        hideError('terms-error');
-      }
-
-      return isValid;
-    }
-
-    function showError(elementId, message) {
-      const errorElement = document.getElementById(elementId);
-      errorElement.textContent = message;
-      errorElement.classList.add('show');
-    }
-
-    function hideError(elementId) {
-      const errorElement = document.getElementById(elementId);
-      errorElement.classList.remove('show');
-      errorElement.textContent = '';
-    }
-
-    function showSuccessModal() {
-      const modal = document.getElementById('successModal');
-      modal.classList.add('show');
-
-      let countdown = 5;
-      const countdownElement = document.getElementById('countdown');
-      
-      const interval = setInterval(() => {
-        countdown--;
-        countdownElement.textContent = countdown;
-        if (countdown === 0) {
-          clearInterval(interval);
-          redirectToLogin();
-        }
-      }, 1000);
-
-      document.getElementById('successBtn').addEventListener('click', redirectToLogin);
-    }
-
-    function showErrorModal(message) {
-      const modal = document.getElementById('errorModal');
-      document.getElementById('error-text').textContent = message;
-      modal.classList.add('show');
-
-      document.getElementById('errorBtn').addEventListener('click', function() {
-        modal.classList.remove('show');
-      });
-    }
-
-    function redirectToLogin() {
-      window.location.href = 'login.html';
-    }
-
-    // Close modals when clicking outside
-    document.getElementById('successModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        redirectToLogin();
-      }
-    });
-
-    document.getElementById('errorModal').addEventListener('click', function(e) {
-      if (e.target === this) {
-        this.classList.remove('show');
-      }
-    });
   </script>
 
 </body>

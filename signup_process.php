@@ -64,8 +64,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // If errors, redirect back with errors
     if (!empty($errors)) {
-        $error_string = http_build_query($errors);
-        header("Location: signup.php?errors=1&$error_string");
+        $_SESSION['signup_errors'] = $errors;
+        $_SESSION['signup_data'] = $_POST;
+        header("Location: signup.php");
         exit;
     }
 
@@ -99,8 +100,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } catch (Exception $e) {
         error_log("Registration error: " . $e->getMessage());
         $errors['general'] = 'Registration failed. Please try again.';
-        $error_string = http_build_query($errors);
-        header("Location: signup.php?errors=1&$error_string");
+        $_SESSION['signup_errors'] = $errors;
+        $_SESSION['signup_data'] = $_POST;
+        header("Location: signup.php");
         exit;
     }
 } else {
