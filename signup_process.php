@@ -60,10 +60,10 @@ if (empty($errors)) {
 
         if ($existingUser) {
             if ($existingUser['email'] === $email) {
-                $errors['email'] = 'An account with this email already exists';
+                $errors['email'] = 'Oops! This email is already registered. Try logging in instead?';
             }
             if ($existingUser['username'] === $username) {
-                $errors['username'] = 'This username is already taken';
+                $errors['username'] = 'Sorry, this username is taken. How about adding a number or initial?';
             }
         }
 

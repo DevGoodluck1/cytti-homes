@@ -108,19 +108,35 @@ $user = getCurrentUser();
             color: #666;
         }
 
-        .actions {
+        .quick-actions {
+            background: #f9f9f9;
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .quick-actions h3 {
+            color: #222;
+            margin-bottom: 20px;
+            font-size: 20px;
             text-align: center;
         }
 
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+
         .action-btn {
-            display: inline-block;
-            padding: 12px 25px;
-            margin: 0 10px;
+            display: block;
+            padding: 15px 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             text-decoration: none;
             border-radius: 10px;
             font-weight: 600;
+            text-align: center;
             transition: all 0.3s ease;
         }
 
@@ -136,6 +152,70 @@ $user = getCurrentUser();
 
         .action-btn.secondary:hover {
             background: #d0d0d0;
+        }
+
+        .tips-section {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 30px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+        }
+
+        .tips-section h3 {
+            color: #222;
+            margin-bottom: 20px;
+            font-size: 20px;
+            text-align: center;
+        }
+
+        .tips-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .tips-list li {
+            color: #666;
+            margin-bottom: 10px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .tips-list li::before {
+            content: "💡";
+            position: absolute;
+            left: 0;
+        }
+
+        .stats-section {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .stat-item {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #667eea;
+            display: block;
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
         }
 
         @media (max-width: 768px) {
@@ -189,9 +269,47 @@ $user = getCurrentUser();
             </div>
         </div>
 
-        <div class="actions">
-            <a href="properties.html" class="action-btn">Browse Properties</a>
-            <a href="profile.html" class="action-btn secondary">Edit Profile</a>
+        <div class="quick-actions">
+            <h3>Quick Actions</h3>
+            <div class="actions-grid">
+                <a href="properties.html" class="action-btn">Browse Properties</a>
+                <a href="articles.html" class="action-btn">Read Articles</a>
+                <a href="profile.html" class="action-btn secondary">Edit Profile</a>
+                <a href="contact.html" class="action-btn secondary">Contact Support</a>
+            </div>
+        </div>
+
+        <div class="stats-section">
+            <h3>Your Activity</h3>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Properties Viewed</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Bookings Made</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Favorites Saved</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">0</span>
+                    <span class="stat-label">Reviews Given</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="tips-section">
+            <h3>Property Hunting Tips</h3>
+            <ul class="tips-list">
+                <li>Always inspect the property before booking</li>
+                <li>Check neighborhood amenities and safety</li>
+                <li>Read reviews from previous tenants</li>
+                <li>Compare prices across different locations</li>
+                <li>Consider transportation and accessibility</li>
+            </ul>
         </div>
     </div>
 </body>
