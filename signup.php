@@ -1,13 +1,13 @@
 <?php
-require_once 'config.php';
+session_start();
 
-// Handle error messages and form data from signup_process.php
 $errors = $_SESSION['signup_errors'] ?? [];
-$formData = $_SESSION['signup_data'] ?? [];
+$data = $_SESSION['signup_data'] ?? [];
 
-// Clear session data after use
-unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
+unset($_SESSION['signup_errors']);
+unset($_SESSION['signup_data']);
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -32,7 +32,6 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
       overflow: hidden;
     }
 
-    /* Animated background pattern */
     body::before {
       content: "";
       position: absolute;
@@ -62,14 +61,8 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
     }
 
     @keyframes slideUp {
-      from {
-        opacity: 0;
-        transform: translateY(30px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
     }
 
     .signup-card h1 {
@@ -115,58 +108,11 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
       box-shadow: 0px 0px 0px 4px rgba(102, 126, 234, 0.1);
     }
 
-    .form-group input::placeholder {
-      color: #999;
-    }
-
-    .password-strength {
-      margin-top: 8px;
-      height: 4px;
-      background: #e0e0e0;
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .password-strength-bar {
-      height: 100%;
-      width: 0;
-      transition: width 0.3s ease, background-color 0.3s ease;
-      border-radius: 2px;
-    }
-
-    .strength-weak {
-      width: 33%;
-      background-color: #f44336;
-    }
-
-    .strength-fair {
-      width: 66%;
-      background-color: #ff9800;
-    }
-
-    .strength-good {
-      width: 100%;
-      background-color: #4caf50;
-    }
-
-    .strength-text {
-      font-size: 12px;
-      margin-top: 4px;
-      color: #666;
-    }
-
     .error-message {
       color: #f44336;
       font-size: 12px;
       margin-top: 6px;
       display: block;
-      animation: shake 0.3s ease;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      25% { transform: translateX(-5px); }
-      75% { transform: translateX(5px); }
     }
 
     .signup-btn {
@@ -183,18 +129,9 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
       margin-top: 10px;
     }
 
-    .signup-btn:hover:not(:disabled) {
+    .signup-btn:hover {
       transform: translateY(-2px);
       box-shadow: 0px 10px 20px rgba(102, 126, 234, 0.3);
-    }
-
-    .signup-btn:active:not(:disabled) {
-      transform: translateY(0);
-    }
-
-    .signup-btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
     }
 
     .login-text {
@@ -208,7 +145,6 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
       color: #667eea;
       font-weight: 600;
       text-decoration: none;
-      transition: color 0.3s ease;
     }
 
     .login-text a:hover {
@@ -216,30 +152,14 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
       text-decoration: underline;
     }
 
-    .terms-text {
-      font-size: 12px;
-      color: #999;
-      margin-top: 15px;
-      line-height: 1.5;
-    }
-
-    .terms-text a {
-      color: #667eea;
-      text-decoration: none;
-    }
-
-    .terms-text a:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 480px) {
-      .signup-card {
-        padding: 30px 20px;
-      }
-
-      .signup-card h1 {
-        font-size: 24px;
-      }
+    .general-error {
+      background: #ffecec;
+      color: #f44336;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 13px;
+      margin-bottom: 15px;
+      border: 1px solid #f44336;
     }
   </style>
 </head>
@@ -250,8 +170,14 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
       <h1>Create Account</h1>
       <p>Join us today and get started</p>
 
+      <?php if (!empty($errors['general'])): ?>
+        <div class="general-error">
+          <?= $errors['general']; ?>
+        </div>
+      <?php endif; ?>
+
       <form action="signup_process.php" method="POST" novalidate>
-        <!-- Username Field -->
+
         <div class="form-group">
           <label for="username">Username</label>
           <input
@@ -262,14 +188,13 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
             required
             minlength="3"
             maxlength="20"
-            value="<?php echo htmlspecialchars($formData['username'] ?? ''); ?>"
+            value="<?= htmlspecialchars($data['username'] ?? '') ?>"
           />
-          <?php if (isset($errors['username'])): ?>
-            <div class="error-message"><?php echo htmlspecialchars($errors['username']); ?></div>
+          <?php if (!empty($errors['username'])): ?>
+            <div class="error-message"><?= $errors['username']; ?></div>
           <?php endif; ?>
         </div>
 
-        <!-- Email Field -->
         <div class="form-group">
           <label for="email">Email Address</label>
           <input
@@ -278,14 +203,13 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
             name="email"
             placeholder="your@email.com"
             required
-            value="<?php echo htmlspecialchars($formData['email'] ?? ''); ?>"
+            value="<?= htmlspecialchars($data['email'] ?? '') ?>"
           />
-          <?php if (isset($errors['email'])): ?>
-            <div class="error-message"><?php echo htmlspecialchars($errors['email']); ?></div>
+          <?php if (!empty($errors['email'])): ?>
+            <div class="error-message"><?= $errors['email']; ?></div>
           <?php endif; ?>
         </div>
 
-        <!-- Password Field -->
         <div class="form-group">
           <label for="password">Password</label>
           <input
@@ -296,16 +220,11 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
             required
             minlength="8"
           />
-          <div class="password-strength">
-            <div class="password-strength-bar" id="strength-bar"></div>
-          </div>
-          <div class="strength-text" id="password-strength-text">Password strength: -</div>
-          <?php if (isset($errors['password'])): ?>
-            <div class="error-message"><?php echo htmlspecialchars($errors['password']); ?></div>
+          <?php if (!empty($errors['password'])): ?>
+            <div class="error-message"><?= $errors['password']; ?></div>
           <?php endif; ?>
         </div>
 
-        <!-- Confirm Password Field -->
         <div class="form-group">
           <label for="confirm-password">Confirm Password</label>
           <input
@@ -315,12 +234,11 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
             placeholder="Re-enter your password"
             required
           />
-          <?php if (isset($errors['confirm_password'])): ?>
-            <div class="error-message"><?php echo htmlspecialchars($errors['confirm_password']); ?></div>
+          <?php if (!empty($errors['confirm_password'])): ?>
+            <div class="error-message"><?= $errors['confirm_password']; ?></div>
           <?php endif; ?>
         </div>
 
-        <!-- Terms Checkbox -->
         <div class="form-group">
           <label style="display: flex; align-items: center; font-weight: 400; cursor: pointer;">
             <input
@@ -328,78 +246,27 @@ unset($_SESSION['signup_errors'], $_SESSION['signup_data']);
               id="terms"
               name="terms"
               required
-              style="width: 18px; height: 18px; margin-right: 8px; cursor: pointer;"
+              style="width: 18px; height: 18px; margin-right: 8px;"
+              <?= isset($data['terms']) ? 'checked' : '' ?>
             />
-            I agree to the <a href="#" style="color: #667eea; text-decoration: none;">Terms of Service</a> and <a href="#" style="color: #667eea; text-decoration: none;">Privacy Policy</a>
+            I agree to the <a href="terms.html" style="color: #667eea; text-decoration: none;">Terms of Service</a>
           </label>
-          <?php if (isset($errors['terms'])): ?>
-            <div class="error-message"><?php echo htmlspecialchars($errors['terms']); ?></div>
+
+          <?php if (!empty($errors['terms'])): ?>
+            <div class="error-message"><?= $errors['terms']; ?></div>
           <?php endif; ?>
         </div>
-
-        <?php if (isset($errors['general'])): ?>
-          <div class="error-message" style="margin-bottom: 20px;"><?php echo htmlspecialchars($errors['general']); ?></div>
-        <?php endif; ?>
 
         <button class="signup-btn" type="submit">
           Create Account
         </button>
 
         <p class="login-text">
-          Already have an account? <a href="login.php">Log in here</a>
-        </p>
-
-        <p class="terms-text">
-          By signing up, you agree to our <a href="#">Terms</a> and <a href="#">Privacy Policy</a>
+          Already have an account? <a href="login.html">Log in here</a>
         </p>
       </form>
     </div>
   </div>
-
-  <script>
-    // Password strength checker
-    const passwordInput = document.getElementById('password');
-    const strengthBar = document.getElementById('strength-bar');
-    const strengthText = document.getElementById('password-strength-text');
-
-    passwordInput.addEventListener('input', function() {
-      const strength = checkPasswordStrength(this.value);
-      updateStrengthBar(strength);
-    });
-
-    function checkPasswordStrength(password) {
-      let strength = 0;
-
-      if (password.length >= 8) strength++;
-      if (password.length >= 12) strength++;
-      if (/[a-z]/.test(password) && /[A-Z]/.test(password)) strength++;
-      if (/[0-9]/.test(password)) strength++;
-      if (/[^a-zA-Z0-9]/.test(password)) strength++;
-
-      return strength;
-    }
-
-    function updateStrengthBar(strength) {
-      const bar = document.querySelector('.password-strength-bar');
-      const text = document.getElementById('password-strength-text');
-
-      bar.classList.remove('strength-weak', 'strength-fair', 'strength-good');
-
-      if (strength <= 2) {
-        bar.classList.add('strength-weak');
-        text.textContent = 'Password strength: Weak';
-        text.style.color = '#f44336';
-      } else if (strength <= 3) {
-        bar.classList.add('strength-fair');
-        text.textContent = 'Password strength: Fair';
-        text.style.color = '#ff9800';
-      } else {
-        bar.classList.add('strength-good');
-        text.textContent = 'Password strength: Strong';
-        text.style.color = '#4caf50';
-      }
-    }
-  </script>
-
 </body>
 </html>
+

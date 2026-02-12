@@ -1,19 +1,19 @@
 <?php
 // Database configuration
-define('DB_HOST', '127.0.0.1');
-define('DB_NAME', 'cytti_homes');
-define('DB_USER', 'root');
-define('DB_PASS', '');
+define('DB_HOST', 'bno1flmhq62cjqyalvgw-mysql.services.clever-cloud.com');
+define('DB_NAME', 'bno1flmhq62cjqyalvgw');
+define('DB_USER', 'uk4w2pl3ojqam4ea');
+define('DB_PASS', 'nYq8QnQnZV3g1skYgdJR');
 define('DB_PORT', 3306);
 
 // Site configuration
 define('SITE_NAME', 'Cytti Homes');
-define('SITE_URL', 'http://localhost/Cytti');
+define('SITE_URL', 'https://goodluck-cytti-homes.onrender.com'); // change this to your Render URL
 
 // Session configuration
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_only_cookies', 1);
-ini_set('session.cookie_secure', 0); // Set to 1 for HTTPS
+ini_set('session.cookie_secure', 0);
 
 session_start();
 
