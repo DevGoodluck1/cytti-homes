@@ -1,9 +1,10 @@
 <?php
 // Database configuration
-define('DB_HOST', 'localhost');
+define('DB_HOST', '127.0.0.1');
 define('DB_NAME', 'cytti_homes');
 define('DB_USER', 'root');
 define('DB_PASS', '');
+define('DB_PORT', 3306);
 
 // Site configuration
 define('SITE_NAME', 'Cytti Homes');
