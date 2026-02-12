@@ -250,7 +250,7 @@ if (isset($_GET['errors'])) {
       <h1>Create Account</h1>
       <p>Join us today and get started</p>
 
-      <form action="register.php" method="POST" novalidate>
+      <form action="signup_process.php" method="POST" novalidate>
         <!-- Username Field -->
         <div class="form-group">
           <label for="username">Username</label>

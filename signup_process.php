@@ -1,76 +1,111 @@
 <?php
+require_once 'config.php';
 require_once 'db_connect.php';
 require_once 'functions.php';
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $errors = [];
 
-if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    http_response_code(405);
-    echo json_encode(['success' => false, 'message' => 'Method not allowed']);
-    exit;
-}
+    // Sanitize and validate inputs
+    $username = sanitizeInput($_POST['username'] ?? '');
+    $email = sanitizeInput($_POST['email'] ?? '');
+    $password = $_POST['password'] ?? '';
+    $confirm_password = $_POST['confirm_password'] ?? '';
+    $terms = isset($_POST['terms']);
 
-try {
-    $data = json_decode(file_get_contents('php://input'), true);
-
-    if (!$data) {
-        $data = $_POST;
+    // Validation
+    if (empty($username)) {
+        $errors['username'] = 'Username is required';
+    } elseif (strlen($username) < 3) {
+        $errors['username'] = 'Username must be at least 3 characters long';
+    } elseif (!preg_match('/^[a-zA-Z0-9_-]+$/', $username)) {
+        $errors['username'] = 'Username can only contain letters, numbers, hyphens, and underscores';
     }
 
-    // Validate input
-    $username = trim($data['username'] ?? '');
-    $email = trim($data['email'] ?? '');
-    $password = $data['password'] ?? '';
-
-    if (empty($username) || empty($email) || empty($password)) {
-        throw new Exception('All fields are required');
+    if (empty($email)) {
+        $errors['email'] = 'Email is required';
+    } elseif (!validateEmail($email)) {
+        $errors['email'] = 'Please enter a valid email address';
     }
 
-    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        throw new Exception('Invalid email format');
+    if (empty($password)) {
+        $errors['password'] = 'Password is required';
+    } elseif (strlen($password) < 8) {
+        $errors['password'] = 'Password must be at least 8 characters long';
     }
 
-    if (strlen($password) < 8) {
-        throw new Exception('Password must be at least 8 characters long');
+    if ($password !== $confirm_password) {
+        $errors['confirm_password'] = 'Passwords do not match';
     }
 
-    // Check if user already exists
-    $existingUser = Database::getInstance()->fetchOne(
-        "SELECT id FROM users WHERE email = ? OR username = ?",
-        [$email, $username]
-    );
-
-    if ($existingUser) {
-        throw new Exception('User with this email or username already exists');
+    if (!$terms) {
+        $errors['terms'] = 'You must agree to the Terms of Service';
     }
 
-    // Hash password
-    $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
+    // Check for duplicate username/email if no other errors
+    if (empty($errors)) {
+        try {
+            $existingUser = Database::getInstance()->fetchOne(
+                "SELECT id FROM users WHERE email = ? OR username = ?",
+                [$email, $username]
+            );
+
+            if ($existingUser) {
+                if (Database::getInstance()->fetchOne("SELECT id FROM users WHERE email = ?", [$email])) {
+                    $errors['email'] = 'An account with this email already exists';
+                } else {
+                    $errors['username'] = 'This username is already taken';
+                }
+            }
+        } catch (Exception $e) {
+            $errors['general'] = 'Database error occurred. Please try again.';
+        }
+    }
+
+    // If errors, redirect back with errors
+    if (!empty($errors)) {
+        $error_string = http_build_query($errors);
+        header("Location: signup.php?errors=1&$error_string");
+        exit;
+    }
 
     // Insert user
-    $userId = Database::getInstance()->insert('users', [
-        'username' => $username,
-        'email' => $email,
-        'password' => $hashedPassword
-    ]);
+    try {
+        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
 
-    // Start session
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = $userId;
-    $_SESSION['username'] = $username;
-    $_SESSION['email'] = $email;
+        $userId = Database::getInstance()->insert('users', [
+            'username' => $username,
+            'email' => $email,
+            'password' => $hashedPassword
+        ]);
 
-    echo json_encode([
-        'success' => true,
-        'message' => 'Account created successfully',
-        'user_id' => $userId
-    ]);
+        // Verify the insert worked
+        $insertedUser = Database::getInstance()->fetchOne("SELECT id, username, email FROM users WHERE id = ?", [$userId]);
 
-} catch (Exception $e) {
-    http_response_code(400);
-    echo json_encode([
-        'success' => false,
-        'message' => $e->getMessage()
-    ]);
+        if (!$insertedUser) {
+            throw new Exception("User was not inserted properly");
+        }
+
+        // Start session and log user in
+        session_regenerate_id(true);
+        $_SESSION['user_id'] = $userId;
+        $_SESSION['username'] = $username;
+        $_SESSION['email'] = $email;
+
+        // Redirect to dashboard
+        header('Location: dashboard.php');
+        exit;
+
+    } catch (Exception $e) {
+        error_log("Registration error: " . $e->getMessage());
+        $errors['general'] = 'Registration failed. Please try again.';
+        $error_string = http_build_query($errors);
+        header("Location: signup.php?errors=1&$error_string");
+        exit;
+    }
+} else {
+    // Not a POST request
+    header('Location: signup.php');
+    exit;
 }
 ?>
