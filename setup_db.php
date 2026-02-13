@@ -4,29 +4,23 @@ require_once 'config.php';
 echo "<h1>Database Setup</h1>";
 
 try {
-    // Connect without specifying database first
-    $dsn = "mysql:host=" . DB_HOST . ";charset=utf8mb4";
+    // Connect directly to Clever Cloud database
+    $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
+
     if (defined('DB_PORT')) {
         $dsn .= ";port=" . DB_PORT;
     }
+
     $pdo = new PDO($dsn, DB_USER, DB_PASS, [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
 
-    echo "<p>Connected to MySQL server successfully!</p>";
-
-    // Create database if it doesn't exist
-    $pdo->exec("CREATE DATABASE IF NOT EXISTS " . DB_NAME);
-    echo "<p>Database '" . DB_NAME . "' created or already exists.</p>";
-
-    // Select the database
-    $pdo->exec("USE " . DB_NAME);
+    echo "<p>Connected to database successfully!</p>";
 
     // Create tables
     $sql = "
-    -- Users table
     CREATE TABLE IF NOT EXISTS users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
@@ -36,7 +30,6 @@ try {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
 
-    -- Properties table
     CREATE TABLE IF NOT EXISTS properties (
         id INT AUTO_INCREMENT PRIMARY KEY,
         title VARCHAR(255) NOT NULL,
@@ -52,7 +45,6 @@ try {
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
     );
 
-    -- Bookings table
     CREATE TABLE IF NOT EXISTS bookings (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
@@ -66,7 +58,6 @@ try {
         FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
     );
 
-    -- Reviews table
     CREATE TABLE IF NOT EXISTS reviews (
         id INT AUTO_INCREMENT PRIMARY KEY,
         user_id INT NOT NULL,
@@ -78,7 +69,6 @@ try {
         FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
     );
 
-    -- Payments table
     CREATE TABLE IF NOT EXISTS payments (
         id INT AUTO_INCREMENT PRIMARY KEY,
         booking_id INT NOT NULL,
@@ -120,6 +110,5 @@ try {
 
 } catch (PDOException $e) {
     echo "<p style='color: red;'>Database setup failed: " . htmlspecialchars($e->getMessage()) . "</p>";
-    echo "<p>Stack trace: <pre>" . htmlspecialchars($e->getTraceAsString()) . "</pre></p>";
 }
 ?>
