@@ -1,4 +1,4 @@
 <?php
-header("Location: properties.html");
-exit;
+echo "SITE WORKING";
 ?>
+
