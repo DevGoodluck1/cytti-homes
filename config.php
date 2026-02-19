@@ -1,11 +1,22 @@
 <?php
-// Start session (MUST be first, before anything else)
-session_start();
-
 /**
  * Configuration file for InfinityFree hosting
  * Fixed credentials - no environment variables needed
+ * 
+ * IMPORTANT: This file should be included at the TOP of any PHP file
+ * that needs session or database access.
  */
+
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
+// Enable error reporting for debugging (disable in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+
+// Set timezone
+date_default_timezone_set('Africa/Nairobi');
 
 // InfinityFree Database Credentials
 $host = "sql213.infinityfree.com";
@@ -21,10 +32,18 @@ define('DB_PASS', $pass);
 define('DB_NAME', $db);
 define('DB_PORT', $port);
 
-// Create mysqli connection (for backward compatibility)
-$conn = new mysqli($host, $user, $pass, $db, $port);
+// Database connection is now handled by db_connect.php
+// DO NOT create a global $conn here - let the Database class handle it
 
-if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+// Debug function to log errors
+function logDebug($message, $data = null) {
+    $logMessage = date('Y-m-d H:i:s') . " - " . $message;
+    if ($data !== null) {
+        $logMessage .= " - " . print_r($data, true);
+    }
+    error_log($logMessage);
 }
+
+// Check if we're in debug mode
+define('DEBUG_MODE', true);
 ?>

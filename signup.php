@@ -1,11 +1,40 @@
 <?php
-session_start();
+/**
+ * Signup Page - User Registration Form
+ * 
+ * IMPORTANT: This file should start with output buffering and session handling
+ */
 
+// Start output buffering to prevent any accidental output
+ob_start();
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include configuration and functions
+require_once 'config.php';
+require_once 'functions.php';
+
+// Get any errors and data from session
 $errors = $_SESSION['signup_errors'] ?? [];
 $data = $_SESSION['signup_data'] ?? [];
 
+// Clear the session variables after retrieving them
 unset($_SESSION['signup_errors']);
 unset($_SESSION['signup_data']);
+
+// If user is already logged in, redirect to dashboard
+if (isLoggedIn()) {
+    header("Location: dashboard.php");
+    exit;
+}
+
+// Debug: Log if there were errors
+if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($errors)) {
+    error_log("Signup page loaded with errors: " . print_r($errors, true));
+}
 ?>
 
 <!DOCTYPE html>
@@ -172,7 +201,7 @@ unset($_SESSION['signup_data']);
 
       <?php if (!empty($errors['general'])): ?>
         <div class="general-error">
-          <?= $errors['general']; ?>
+          <?= htmlspecialchars($errors['general']); ?>
         </div>
       <?php endif; ?>
 
@@ -191,7 +220,7 @@ unset($_SESSION['signup_data']);
             value="<?= htmlspecialchars($data['username'] ?? '') ?>"
           />
           <?php if (!empty($errors['username'])): ?>
-            <div class="error-message"><?= $errors['username']; ?></div>
+            <div class="error-message"><?= htmlspecialchars($errors['username']); ?></div>
           <?php endif; ?>
         </div>
 
@@ -206,7 +235,7 @@ unset($_SESSION['signup_data']);
             value="<?= htmlspecialchars($data['email'] ?? '') ?>"
           />
           <?php if (!empty($errors['email'])): ?>
-            <div class="error-message"><?= $errors['email']; ?></div>
+            <div class="error-message"><?= htmlspecialchars($errors['email']); ?></div>
           <?php endif; ?>
         </div>
 
@@ -221,7 +250,7 @@ unset($_SESSION['signup_data']);
             minlength="8"
           />
           <?php if (!empty($errors['password'])): ?>
-            <div class="error-message"><?= $errors['password']; ?></div>
+            <div class="error-message"><?= htmlspecialchars($errors['password']); ?></div>
           <?php endif; ?>
         </div>
 
@@ -235,7 +264,7 @@ unset($_SESSION['signup_data']);
             required
           />
           <?php if (!empty($errors['confirm_password'])): ?>
-            <div class="error-message"><?= $errors['confirm_password']; ?></div>
+            <div class="error-message"><?= htmlspecialchars($errors['confirm_password']); ?></div>
           <?php endif; ?>
         </div>
 
@@ -253,7 +282,7 @@ unset($_SESSION['signup_data']);
           </label>
 
           <?php if (!empty($errors['terms'])): ?>
-            <div class="error-message"><?= $errors['terms']; ?></div>
+            <div class="error-message"><?= htmlspecialchars($errors['terms']); ?></div>
           <?php endif; ?>
         </div>
 
@@ -267,6 +296,10 @@ unset($_SESSION['signup_data']);
       </form>
     </div>
   </div>
+
+  <?php
+  // End output buffering - send all output at once
+  ob_end_flush();
+  ?>
 </body>
 </html>
-

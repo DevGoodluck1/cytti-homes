@@ -2,14 +2,25 @@
 /**
  * Database Connection for InfinityFree
  * Using MySQLi with a Database Singleton Class
+ * 
+ * IMPORTANT: Include this file AFTER config.php
  */
 
-// InfinityFree Database Credentials
-$host = "sql213.infinityfree.com";
-$user = "if0_41198744";
-$pass = "PD84JL9Doz";
-$db   = "if0_41198744_cytti";
-$port = 3306;
+// Get database credentials from config.php if available, otherwise use defaults
+if (!defined('DB_HOST')) {
+    // Fallback credentials (should match config.php)
+    define('DB_HOST', 'sql213.infinityfree.com');
+    define('DB_USER', 'if0_41198744');
+    define('DB_PASS', 'PD84JL9Doz');
+    define('DB_NAME', 'if0_41198744_cytti');
+    define('DB_PORT', 3306);
+}
+
+$host = DB_HOST;
+$user = DB_USER;
+$pass = DB_PASS;
+$db   = DB_NAME;
+$port = DB_PORT;
 
 /**
  * Database Singleton Class
@@ -22,14 +33,29 @@ class Database {
     private function __construct() {
         global $host, $user, $pass, $db, $port;
         
-        $this->conn = new mysqli($host, $user, $pass, $db, $port);
+        // Suppress mysqli error display, we'll handle it ourselves
+        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
         
-        if ($this->conn->connect_error) {
-            die("Database connection failed: " . $this->conn->connect_error);
+        try {
+            $this->conn = new mysqli($host, $user, $pass, $db, $port);
+            
+            if ($this->conn->connect_error) {
+                throw new Exception("Database connection failed: " . $this->conn->connect_error);
+            }
+            
+            // Set charset to UTF-8
+            $this->conn->set_charset("utf8mb4");
+            
+            if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                error_log("Database connection established successfully");
+            }
+            
+        } catch (Exception $e) {
+            if (defined('DEBUG_MODE') && DEBUG_MODE) {
+                error_log("Database Connection Error: " . $e->getMessage());
+            }
+            throw $e; // Re-throw to let the calling code handle it
         }
-        
-        // Set charset to UTF-8
-        $this->conn->set_charset("utf8mb4");
     }
     
     /**
@@ -92,7 +118,7 @@ class Database {
         $stmt = $this->conn->prepare($sql);
         
         if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error);
+            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
         }
         
         // Bind parameters dynamically
@@ -100,11 +126,15 @@ class Database {
         $stmt->bind_param($types, ...$values);
         
         if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
+            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
         }
         
         $insertId = $stmt->insert_id;
         $stmt->close();
+        
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log("Insert successful. Table: $table, Insert ID: $insertId");
+        }
         
         return $insertId;
     }
@@ -124,7 +154,7 @@ class Database {
         $stmt = $this->conn->prepare($sql);
         
         if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error);
+            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
         }
         
         $values = array_values($data);
@@ -134,11 +164,15 @@ class Database {
         $stmt->bind_param($types, ...$allParams);
         
         if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
+            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
         }
         
         $affectedRows = $stmt->affected_rows;
         $stmt->close();
+        
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log("Update successful. Table: $table, Affected rows: $affectedRows");
+        }
         
         return $affectedRows;
     }
@@ -152,18 +186,22 @@ class Database {
         $stmt = $this->conn->prepare($sql);
         
         if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error);
+            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
         }
         
         $types = str_repeat('s', count($params));
         $stmt->bind_param($types, ...$params);
         
         if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error);
+            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
         }
         
         $affectedRows = $stmt->affected_rows;
         $stmt->close();
+        
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log("Delete successful. Table: $table, Affected rows: $affectedRows");
+        }
         
         return $affectedRows;
     }
@@ -222,10 +260,6 @@ class Database {
     }
 }
 
-// Create mysqli connection for backward compatibility (if needed)
-$conn = mysqli_connect($host, $user, $pass, $db);
-
-if (!$conn) {
-    die("Database connection failed: " . mysqli_connect_error());
-}
+// DO NOT create a global $conn here - let the Database class handle all connections
+// This was causing duplicate connection issues
 ?>

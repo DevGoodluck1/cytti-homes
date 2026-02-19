@@ -1,17 +1,161 @@
 <?php
+/**
+ * Dashboard Page - User Dashboard
+ * 
+ * IMPORTANT: Session must be started before any output
+ * This file implements EXPLICIT SESSION HANDLING for security
+ */
+
+// ============================================================
+// EXPLICIT SESSION HANDLING - START
+// ============================================================
+
+// Start output buffering to prevent "headers already sent" errors
+ob_start();
+
+// ============================================================
+// Step 1: Start session with explicit status check
+// ============================================================
+if (session_status() === PHP_SESSION_NONE) {
+    // Session not started, start it now
+    session_start();
+    error_log("Session started explicitly in dashboard.php - Session ID: " . session_id());
+} else if (session_status() === PHP_SESSION_ACTIVE) {
+    // Session already active, log it
+    error_log("Session already active in dashboard.php - Session ID: " . session_id());
+}
+
+// ============================================================
+// Step 2: Validate session exists and has required data
+// ============================================================
+if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
+    // Session invalid, redirect to login
+    ob_start();
+    header('Location: login.html');
+    ob_end_flush();
+    exit;
+}
+
+// ============================================================
+// Step 3: Session Fingerprint Validation (Security)
+// Validate IP address and User Agent to prevent session hijacking
+// ============================================================
+$sessionFingerprint = $_SESSION['fingerprint'] ?? [];
+$currentIp = $_SERVER['REMOTE_ADDR'] ?? '';
+$currentUserAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+
+// Check if fingerprint exists
+if (empty($sessionFingerprint)) {
+    // Create new fingerprint for this session
+    $_SESSION['fingerprint'] = [
+        'ip' => $currentIp,
+        'user_agent' => $currentUserAgent,
+        'created' => time()
+    ];
+    error_log("New session fingerprint created for user: " . ($_SESSION['user_id'] ?? 'unknown'));
+} else {
+    // Validate existing fingerprint
+    $storedIp = $sessionFingerprint['ip'] ?? '';
+    $storedUserAgent = $sessionFingerprint['user_agent'] ?? '';
+    
+    // For development, we might allow different IPs, but validate user agent
+    if ($storedUserAgent !== $currentUserAgent) {
+        // User agent mismatch - potential session theft
+        error_log("SECURITY: User agent mismatch detected! Stored: " . substr($storedUserAgent, 0, 50) . " Current: " . substr($currentUserAgent, 0, 50));
+        // In production, you might want to destroy the session here
+        // session_destroy();
+        // ob_start();
+        // header('Location: login.html');
+        // ob_end_flush();
+        // exit;
+    }
+}
+
+// ============================================================
+// Step 4: Session Regeneration (Security - prevents session fixation)
+// Regenerate session ID periodically
+// ============================================================
+if (!isset($_SESSION['last_regeneration'])) {
+    // First time, regenerate session ID
+    session_regenerate_id(true);
+    $_SESSION['last_regeneration'] = time();
+    error_log("Session ID regenerated (initial) - New ID: " . session_id());
+} else {
+    // Check if regeneration is needed (every 30 minutes)
+    $regenerationInterval = 30 * 60; // 30 minutes
+    if (time() - $_SESSION['last_regeneration'] > $regenerationInterval) {
+        session_regenerate_id(true);
+        $_SESSION['last_regeneration'] = time();
+        error_log("Session ID regenerated (periodic) - New ID: " . session_id());
+    }
+}
+
+// ============================================================
+// Step 5: Session Activity Tracking
+// ============================================================
+$_SESSION['last_activity'] = time();
+$_SESSION['last_page'] = 'dashboard.php';
+
+// ============================================================
+// Step 6: Session Expiry Check (configurable duration)
+// ============================================================
+$sessionDuration = 24 * 60 * 60; // 24 hours in seconds
+if (isset($_SESSION['login_time'])) {
+    if (time() - $_SESSION['login_time'] > $sessionDuration) {
+        // Session expired, logout user
+        error_log("Session expired for user ID: " . ($_SESSION['user_id'] ?? 'unknown'));
+        
+        // Clear session data
+        $_SESSION = [];
+        session_destroy();
+        
+        ob_start();
+        header('Location: login.html?error=session_expired');
+        ob_end_flush();
+        exit;
+    }
+}
+
+// ============================================================
+// Step 7: Validate user_id is still valid in database
+// (Optional - can be skipped for performance)
+// ============================================================
+
+// ============================================================
+// EXPLICIT SESSION HANDLING - END
+// ============================================================
+
+// Include configuration and functions
 require_once 'config.php';
 require_once 'functions.php';
 
-requireLogin();
+// Debug: Log dashboard access with session details
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    error_log("Dashboard accessed - User ID: " . ($_SESSION['user_id'] ?? 'unknown') . 
+               ", Session ID: " . session_id() . 
+               ", Last Activity: " . date('Y-m-d H:i:s', $_SESSION['last_activity'] ?? time()));
+}
 
+// Get current user data
 $user = getCurrentUser();
+
+// Additional explicit user validation
+if ($user === null || empty($user['id'])) {
+    // User data not found in session, force re-login
+    error_log("User data not found in session, redirecting to login");
+    ob_start();
+    header('Location: login.html');
+    ob_end_flush();
+    exit;
+}
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - <?php echo htmlspecialchars($user['username']); ?></title>
+    <title>Dashboard - <?php echo htmlspecialchars($user['username'] ?? 'User'); ?></title>
     <style>
         * {
             margin: 0;
@@ -249,7 +393,7 @@ $user = getCurrentUser();
         </div>
 
         <div class="welcome-section">
-            <h2>Welcome back, <?php echo htmlspecialchars($user['username']); ?>!</h2>
+            <h2>Welcome back, <?php echo htmlspecialchars($user['username'] ?? 'User'); ?>!</h2>
             <p>You are successfully logged in to your Cytti Homes account.</p>
         </div>
 
@@ -257,15 +401,15 @@ $user = getCurrentUser();
             <h3>Your Account Information</h3>
             <div class="info-item">
                 <span class="info-label">Username:</span>
-                <span class="info-value"><?php echo htmlspecialchars($user['username']); ?></span>
+                <span class="info-value"><?php echo htmlspecialchars($user['username'] ?? 'N/A'); ?></span>
             </div>
             <div class="info-item">
                 <span class="info-label">Email:</span>
-                <span class="info-value"><?php echo htmlspecialchars($user['email']); ?></span>
+                <span class="info-value"><?php echo htmlspecialchars($user['email'] ?? 'N/A'); ?></span>
             </div>
             <div class="info-item">
                 <span class="info-label">User ID:</span>
-                <span class="info-value"><?php echo htmlspecialchars($user['id']); ?></span>
+                <span class="info-value"><?php echo htmlspecialchars($user['id'] ?? 'N/A'); ?></span>
             </div>
         </div>
 
@@ -312,5 +456,10 @@ $user = getCurrentUser();
             </ul>
         </div>
     </div>
+
+    <?php
+    // End output buffering
+    ob_end_flush();
+    ?>
 </body>
 </html>

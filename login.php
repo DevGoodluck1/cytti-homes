@@ -1,13 +1,42 @@
 <?php
-require_once 'config.php';
+/**
+ * Login Page - User Login Form
+ * 
+ * IMPORTANT: This file should start with output buffering and session handling
+ */
 
-// Handle error messages from login_process.php
-$errors = [];
-if (isset($_GET['errors'])) {
-    $errors = $_GET;
-    unset($errors['errors']);
+// Start output buffering to prevent any accidental output
+ob_start();
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Include configuration and functions
+require_once 'config.php';
+require_once 'functions.php';
+
+// Get any errors from session
+$errors = $_SESSION['login_errors'] ?? [];
+$email = $_SESSION['login_email'] ?? '';
+
+// Clear the session variables after retrieving them
+unset($_SESSION['login_errors']);
+unset($_SESSION['login_email']);
+
+// If user is already logged in, redirect to dashboard
+if (isLoggedIn()) {
+    header("Location: dashboard.php");
+    exit;
+}
+
+// Debug: Log if there were errors
+if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($errors)) {
+    error_log("Login page loaded with errors: " . print_r($errors, true));
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -282,6 +311,10 @@ if (isset($_GET['errors'])) {
       <h1>Welcome Back</h1>
       <p>Log in to access your account</p>
 
+      <?php if (!empty($errors['general'])): ?>
+        <div class="error-message" style="margin-bottom: 20px;"><?= htmlspecialchars($errors['general']); ?></div>
+      <?php endif; ?>
+
       <form action="login_process.php" method="POST" novalidate>
         <!-- Email Field -->
         <div class="form-group">
@@ -292,7 +325,7 @@ if (isset($_GET['errors'])) {
             name="email"
             placeholder="your@email.com"
             required
-            value="<?php echo htmlspecialchars($_POST['email'] ?? ''); ?>"
+            value="<?php echo htmlspecialchars($email); ?>"
           />
           <?php if (isset($errors['email'])): ?>
             <div class="error-message"><?php echo htmlspecialchars($errors['email']); ?></div>
@@ -323,10 +356,6 @@ if (isset($_GET['errors'])) {
           <a href="forgot-password.html">Forgot password?</a>
         </div>
 
-        <?php if (isset($errors['general'])): ?>
-          <div class="error-message" style="margin-bottom: 20px;"><?php echo htmlspecialchars($errors['general']); ?></div>
-        <?php endif; ?>
-
         <button class="login-btn" type="submit">
           Log In
         </button>
@@ -343,6 +372,11 @@ if (isset($_GET['errors'])) {
       </form>
     </div>
   </div>
+
+  <?php
+  // End output buffering - send all output at once
+  ob_end_flush();
+  ?>
 
 </body>
 </html>
