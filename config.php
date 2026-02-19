@@ -1,4 +1,7 @@
 <?php
+// Start session (MUST be first, before anything else)
+session_start();
+
 /**
  * Configuration file for InfinityFree hosting
  * Fixed credentials - no environment variables needed
@@ -24,5 +27,4 @@ $conn = new mysqli($host, $user, $pass, $db, $port);
 if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
-
 ?>
