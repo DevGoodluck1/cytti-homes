@@ -1,11 +1,15 @@
 <?php
+/**
+ * Configuration file for InfinityFree hosting
+ * Fixed credentials - no environment variables needed
+ */
 
-// Get Clever Cloud database environment variables
-$host = getenv("MYSQL_ADDON_HOST");
-$user = getenv("MYSQL_ADDON_USER");
-$pass = getenv("MYSQL_ADDON_PASSWORD");
-$db   = getenv("MYSQL_ADDON_DB");
-$port = getenv("MYSQL_ADDON_PORT");
+// InfinityFree Database Credentials
+$host = "sql213.infinityfree.com";
+$user = "if0_41198744";
+$pass = "PD84JL9Doz";
+$db   = "if0_41198744_cytti";
+$port = 3306;
 
 // Define constants for db_connect.php (PDO)
 define('DB_HOST', $host);

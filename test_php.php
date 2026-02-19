@@ -1,6 +1,6 @@
 <?php
 /**
- * Simple PHP Test File for Clever Cloud
+ * Simple PHP Test File for InfinityFree
  * This file tests if PHP is working correctly on the server
  */
 
@@ -32,16 +32,26 @@ echo "Server API: " . php_sapi_name() . "\n";
 echo "Document Root: " . $_SERVER['DOCUMENT_ROOT'] . "\n";
 echo "Request URI: " . $_SERVER['REQUEST_URI'] . "\n";
 
-// Display environment variables (if set)
-echo "\nClever Cloud Environment Variables:\n";
-$env_vars = ['MYSQL_ADDON_HOST', 'MYSQL_ADDON_USER', 'MYSQL_ADDON_DB', 'MYSQL_ADDON_PORT'];
-foreach ($env_vars as $var) {
-    $value = getenv($var);
-    if ($value) {
-        echo "$var = $value\n";
+// Display InfinityFree database configuration
+echo "\nInfinityFree Database Configuration:\n";
+echo "Host: sql213.infinityfree.com\n";
+echo "User: if0_41198744\n";
+echo "Database: if0_41198744_cytti\n";
+echo "Port: 3306\n";
+
+// Test database connection
+echo "\nDatabase Connection Test:\n";
+require_once 'db_connect.php';
+try {
+    $db = Database::getInstance();
+    $conn = $db->getConnection();
+    if ($conn->ping()) {
+        echo "[OK] Database connection successful!\n";
     } else {
-        echo "$var = NOT SET\n";
+        echo "[FAIL] Database connection failed\n";
     }
+} catch (Exception $e) {
+    echo "[FAIL] Database error: " . $e->getMessage() . "\n";
 }
 
 echo "\nSITE WORKING\n";

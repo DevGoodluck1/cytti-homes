@@ -4,7 +4,7 @@ require_once 'config.php';
 echo "<h1>Database Setup</h1>";
 
 try {
-    // Connect directly to Clever Cloud database
+    // Connect to InfinityFree database
     $dsn = "mysql:host=" . DB_HOST . ";dbname=" . DB_NAME . ";charset=utf8mb4";
 
     if (defined('DB_PORT')) {

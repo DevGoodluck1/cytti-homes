@@ -1,9 +1,9 @@
 -- Cytti Homes Database Schema
--- Run this script to create the tables inside Clever Cloud database
+-- Run this script to create the tables inside InfinityFree database
 
 -- IMPORTANT:
--- Clever Cloud does not allow CREATE DATABASE on DEV plan.
--- So we remove CREATE DATABASE and USE cytti_db.
+-- InfinityFree uses a control panel for database management.
+-- Make sure to create the database first through the InfinityFree control panel.
 
 -- Users table
 CREATE TABLE IF NOT EXISTS users (
