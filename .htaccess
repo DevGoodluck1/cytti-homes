@@ -1,8 +1,3 @@
-# InfinityFree PHP Configuration
-# Enable error display for debugging (disable in production)
-php_flag display_errors on
-php_value error_reporting E_ALL
-
 # Set default charset
 AddDefaultCharset UTF-8
 
@@ -19,15 +14,13 @@ AddDefaultCharset UTF-8
     RewriteRule ^(.*)$ index.php?/$1 [L]
 </IfModule>
 
-# Deny access to sensitive files
+# Deny access to sensitive files (Apache 2.4+ compatible)
 <FilesMatch "^\.">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 <FilesMatch "\.(env|ini|md|sql|log|json|yml|yaml)$">
-    Order allow,deny
-    Deny from all
+    Require all denied
 </FilesMatch>
 
 # Custom error pages (optional)

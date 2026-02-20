@@ -7,16 +7,49 @@
  * that needs session or database access.
  */
 
-// Start output buffering to prevent "headers already sent" errors
-ob_start();
+// CRITICAL: Remove any output buffering first
+while (ob_get_level()) {
+    ob_end_clean();
+}
 
-// Enable error reporting for debugging (disable in production)
+// Enable error reporting for debugging
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 ini_set('display_startup_errors', 1);
+ini_set('log_errors', 1);
 
 // Set timezone
 date_default_timezone_set('Africa/Nairobi');
+
+// ============================================================
+// SESSION FIX FOR INFINITYFREE
+// ============================================================
+// Set proper session save path for InfinityFree
+$session_save_path = '/tmp';
+if (!is_dir($session_save_path) || !is_writable($session_save_path)) {
+    // Try alternative paths
+    $alt_paths = [
+        sys_get_temp_dir(),
+        __DIR__ . '/sessions'
+    ];
+    foreach ($alt_paths as $path) {
+        if (is_dir($path) && is_writable($path)) {
+            $session_save_path = $path;
+            break;
+        }
+    }
+}
+
+ini_set('session.save_handler', 'files');
+ini_set('session.save_path', $session_save_path);
+ini_set('session.cookie_httponly', 1);
+ini_set('session.use_strict_mode', 1);
+ini_set('session.cookie_samesite', 'Strict');
+
+// Start session if not already started
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
 // InfinityFree Database Credentials
 $host = "sql213.infinityfree.com";

@@ -2,18 +2,10 @@
 /**
  * Login Page - User Login Form
  * 
- * IMPORTANT: This file should start with output buffering and session handling
+ * FIXED: Session is now handled by config.php
  */
 
-// Start output buffering to prevent any accidental output
-ob_start();
-
-// Start session if not already started
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Include configuration and functions
+// Include configuration - this handles session and output buffering
 require_once 'config.php';
 require_once 'functions.php';
 
