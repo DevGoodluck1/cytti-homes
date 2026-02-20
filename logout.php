@@ -27,6 +27,6 @@ session_destroy();
 
 // Clear the output buffer and redirect to login
 ob_end_clean();
-header('Location: login.html');
+header('Location: login.php');
 exit;
 ?>

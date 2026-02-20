@@ -80,13 +80,7 @@ class Database {
      */
     public function fetchAll($sql, $params = []) {
         $stmt = $this->executeStatement($sql, $params);
-        $result = $stmt->get_result();
-        $rows = [];
-        
-        while ($row = $result->fetch_assoc()) {
-            $rows[] = $row;
-        }
-        
+        $rows = $this->fetchRowsFromStatement($stmt);
         $stmt->close();
         return $rows;
     }
@@ -96,11 +90,9 @@ class Database {
      */
     public function fetchOne($sql, $params = []) {
         $stmt = $this->executeStatement($sql, $params);
-        $result = $stmt->get_result();
-        $row = $result->fetch_assoc();
-        
+        $rows = $this->fetchRowsFromStatement($stmt);
         $stmt->close();
-        return $row;
+        return $rows[0] ?? null;
     }
     
     /**
@@ -226,6 +218,52 @@ class Database {
         }
         
         return $stmt;
+    }
+
+    /**
+     * Fetch rows from statement with mysqlnd fallback support.
+     * Some shared hosts do not support mysqli_stmt::get_result().
+     */
+    private function fetchRowsFromStatement($stmt) {
+        // Preferred path when mysqlnd is available
+        if (method_exists($stmt, 'get_result')) {
+            $result = $stmt->get_result();
+            if ($result !== false) {
+                $rows = [];
+                while ($row = $result->fetch_assoc()) {
+                    $rows[] = $row;
+                }
+                return $rows;
+            }
+        }
+
+        // Fallback path for hosts without mysqlnd
+        $metadata = $stmt->result_metadata();
+        if ($metadata === false) {
+            return [];
+        }
+
+        $row = [];
+        $bindParams = [];
+
+        while ($field = $metadata->fetch_field()) {
+            $row[$field->name] = null;
+            $bindParams[] = &$row[$field->name];
+        }
+
+        call_user_func_array([$stmt, 'bind_result'], $bindParams);
+
+        $rows = [];
+        while ($stmt->fetch()) {
+            $currentRow = [];
+            foreach ($row as $key => $value) {
+                $currentRow[$key] = $value;
+            }
+            $rows[] = $currentRow;
+        }
+
+        $metadata->free();
+        return $rows;
     }
     
     /**

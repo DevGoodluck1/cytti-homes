@@ -59,7 +59,7 @@ function requireLogin() {
     if (!isLoggedIn()) {
         // Use output buffering to prevent header errors
         ob_start();
-        header('Location: login.html');
+        header('Location: login.php');
         ob_end_flush();
         exit;
     }
@@ -101,7 +101,7 @@ function logout() {
     
     // Redirect to login
     ob_start();
-    header('Location: login.html');
+    header('Location: login.php');
     ob_end_flush();
     exit;
 }

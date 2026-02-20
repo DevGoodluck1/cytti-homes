@@ -27,7 +27,7 @@ if (defined('DEBUG_MODE') && DEBUG_MODE) {
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     // Not a POST request, redirect to login
     ob_end_clean();
-    header("Location: login.html");
+    header("Location: login.php");
     exit;
 }
 
@@ -59,7 +59,7 @@ if (!empty($errors)) {
     $_SESSION['login_email'] = $email;
     
     ob_end_clean();
-    header("Location: login.html");
+    header("Location: login.php");
     exit;
 }
 
@@ -83,7 +83,7 @@ try {
         $_SESSION['login_errors'] = $errors;
         
         ob_end_clean();
-        header("Location: login.html");
+        header("Location: login.php");
         exit;
     }
 
@@ -126,7 +126,7 @@ try {
     $_SESSION['login_errors'] = $errors;
     
     ob_end_clean();
-    header("Location: login.html");
+    header("Location: login.php");
     exit;
 }
 ?>

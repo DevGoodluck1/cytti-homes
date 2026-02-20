@@ -31,7 +31,7 @@ if (session_status() === PHP_SESSION_NONE) {
 if (!isset($_SESSION['user_id']) || !isset($_SESSION['logged_in']) || $_SESSION['logged_in'] !== true) {
     // Session invalid, redirect to login
     ob_start();
-    header('Location: login.html');
+    header('Location: login.php');
     ob_end_flush();
     exit;
 }
@@ -110,7 +110,7 @@ if (isset($_SESSION['login_time'])) {
         session_destroy();
         
         ob_start();
-        header('Location: login.html?error=session_expired');
+        header('Location: login.php?error=session_expired');
         ob_end_flush();
         exit;
     }
@@ -144,7 +144,7 @@ if ($user === null || empty($user['id'])) {
     // User data not found in session, force re-login
     error_log("User data not found in session, redirecting to login");
     ob_start();
-    header('Location: login.html');
+    header('Location: login.php');
     ob_end_flush();
     exit;
 }

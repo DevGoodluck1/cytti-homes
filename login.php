@@ -20,10 +20,12 @@ require_once 'functions.php';
 // Get any errors from session
 $errors = $_SESSION['login_errors'] ?? [];
 $email = $_SESSION['login_email'] ?? '';
+$signupSuccess = $_SESSION['signup_success'] ?? '';
 
 // Clear the session variables after retrieving them
 unset($_SESSION['login_errors']);
 unset($_SESSION['login_email']);
+unset($_SESSION['signup_success']);
 
 // If user is already logged in, redirect to dashboard
 if (isLoggedIn()) {
@@ -310,6 +312,12 @@ if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($errors)) {
     <div class="login-card">
       <h1>Welcome Back</h1>
       <p>Log in to access your account</p>
+
+      <?php if (!empty($signupSuccess)): ?>
+        <div style="margin-bottom: 20px; padding: 12px; border-radius: 10px; background: #e8f5e9; color: #2e7d32; border: 1px solid #2e7d32; font-size: 13px;">
+          <?= htmlspecialchars($signupSuccess); ?>
+        </div>
+      <?php endif; ?>
 
       <?php if (!empty($errors['general'])): ?>
         <div class="error-message" style="margin-bottom: 20px;"><?= htmlspecialchars($errors['general']); ?></div>

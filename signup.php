@@ -291,7 +291,7 @@ if (defined('DEBUG_MODE') && DEBUG_MODE && !empty($errors)) {
         </button>
 
         <p class="login-text">
-          Already have an account? <a href="login.html">Log in here</a>
+          Already have an account? <a href="login.php">Log in here</a>
         </p>
       </form>
     </div>
