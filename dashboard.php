@@ -10,8 +10,9 @@
 // EXPLICIT SESSION HANDLING - START
 // ============================================================
 
-// Start output buffering to prevent "headers already sent" errors
-ob_start();
+// Note: Output buffering is handled by config.php
+// Do NOT call ob_start() here - it will conflict with config.php
+
 
 // ============================================================
 // Step 1: Start session with explicit status check

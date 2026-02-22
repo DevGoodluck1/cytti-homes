@@ -2,18 +2,11 @@
 /**
  * Login Process - User Authentication Handler
  * 
- * IMPORTANT: session_start() must be called FIRST, before anything else!
+ * IMPORTANT: config.php handles session and output buffering
+ * Must be included FIRST before any other code or output
  */
 
-// Start session FIRST - this is critical!
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-
-// Output buffering to prevent "headers already sent" errors
-ob_start();
-
-// Include configuration and functions
+// Include configuration - this handles session and output buffering
 require_once 'config.php';
 require_once 'db_connect.php';
 require_once 'functions.php';

@@ -287,25 +287,6 @@
       <h1>Welcome Back</h1>
       <p>Log in to access your account</p>
 
-      <?php
-      // Display errors from session
-      if (session_status() === PHP_SESSION_NONE) {
-          session_start();
-      }
-      if (isset($_SESSION['login_errors']) && !empty($_SESSION['login_errors'])) {
-          echo '<div class="alert alert-error">';
-          foreach ($_SESSION['login_errors'] as $error) {
-              echo htmlspecialchars($error) . '<br>';
-          }
-          echo '</div>';
-          unset($_SESSION['login_errors']);
-      }
-      if (isset($_SESSION['signup_success'])) {
-          echo '<div class="alert alert-success">' . htmlspecialchars($_SESSION['signup_success']) . '</div>';
-          unset($_SESSION['signup_success']);
-      }
-      ?>
-
       <form action="login_process.php" method="POST" id="loginForm">
         <!-- Email Field -->
         <div class="form-group">
@@ -316,7 +297,6 @@
             name="email"
             placeholder="your@email.com"
             required
-            value="<?php echo isset($_SESSION['login_email']) ? htmlspecialchars($_SESSION['login_email']) : ''; ?>"
           />
         </div>
 
@@ -357,8 +337,6 @@
       </form>
     </div>
   </div>
-
-  <?php unset($_SESSION['login_email']); ?>
 
 </body>
 </html>
