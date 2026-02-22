@@ -1,31 +1,19 @@
-# HTTP 500 Error Fix - cyttihomes.rf.gd
+# TODO: Fix Login/Signup Database Connection Issue
 
-## Issues Identified:
-1. Session configuration issues on InfinityFree hosting
-2. Duplicate output buffering causing conflicts
-3. Session save path issues
+## Problem Analysis
+- Signup works: User data is saved to database
+- Sign-in failing after logging in: Session not persisting
 
-## Fixes Applied:
+## Root Causes Identified
+1. **login.html** has incorrect link: `<a href="signup.html">` should be `<a href="signup.php">`
+2. **login.html** has a form that may have JavaScript issues
+3. Possible session handling issue between signup and login
 
-### 1. config.php - Session Fix for InfinityFree
-- [x] Added proper session save path configuration
-- [x] Set session cookie security settings
-- [x] Added session start in config.php (centralized)
+## Fix Plan
+- [ ] Fix login.html - change signup link from signup.html to signup.php
+- [ ] Ensure login_process.php is working correctly
+- [ ] Verify session handling in dashboard.php
+- [ ] Test the flow
 
-### 2. index.php - Simplified
-- [x] Added proper session handling
-- [x] Added error reporting
-
-### 3. login.php - Simplified
-- [x] Removed duplicate session handling
-
-### 4. signup.php - Simplified  
-- [x] Removed duplicate session handling
-
-### 5. New Diagnostic Files:
-- [x] debug_server.php - Server diagnostics
-- [x] debug.php - Debug bootstrap
-
-## How to Test:
-1. Upload files to InfinityFree
-2. Visit: https://cyttihomes.rf.gd/debug_server.php
+## Files to Edit
+- login.html (link fix)

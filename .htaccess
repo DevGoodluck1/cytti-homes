@@ -23,7 +23,10 @@ AddDefaultCharset UTF-8
     Require all denied
 </FilesMatch>
 
-# Custom error pages (optional)
-ErrorDocument 403 /403.html
-ErrorDocument 404 /404.html
-ErrorDocument 500 /500.html
+# PHP settings for Docker/Render
+php_value upload_max_filesize 10M
+php_value post_max_size 10M
+php_value max_execution_time 300
+
+# Allow index.php to handle all routes in Docker environment
+DirectoryIndex index.php index.html

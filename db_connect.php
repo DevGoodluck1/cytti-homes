@@ -1,29 +1,21 @@
 <?php
 /**
- * Database Connection for InfinityFree
- * Using MySQLi with a Database Singleton Class
+ * Database Connection for Supabase PostgreSQL
+ * Using PostgreSQL with a Database Singleton Class
  * 
  * IMPORTANT: Include this file AFTER config.php
+ * Uses environment variables for database credentials
  */
 
-// Get database credentials from config.php if available, otherwise use defaults
-if (!defined('DB_HOST')) {
-    // Fallback credentials (should match config.php)
-    define('DB_HOST', 'sql213.infinityfree.com');
-    define('DB_USER', 'if0_41198744');
-    define('DB_PASS', 'PD84JL9Doz');
-    define('DB_NAME', 'if0_41198744_cytti');
-    define('DB_PORT', 3306);
-}
-
-$host = DB_HOST;
-$user = DB_USER;
-$pass = DB_PASS;
-$db   = DB_NAME;
-$port = DB_PORT;
+// Get database credentials from environment variables (for Supabase)
+$host = getenv('DB_HOST') ?: 'aws-0-eu-west-1.pooler.supabase.com';
+$user = getenv('DB_USER') ?: 'postgres';
+$pass = getenv('DB_PASS') ?: 'Stalker@2024##';
+$db   = getenv('DB_NAME') ?: 'postgres';
+$port = (int)(getenv('DB_PORT')) ?: 6543;
 
 /**
- * Database Singleton Class
+ * Database Singleton Class for PostgreSQL
  * Provides methods for executing queries
  */
 class Database {
@@ -33,28 +25,31 @@ class Database {
     private function __construct() {
         global $host, $user, $pass, $db, $port;
         
-        // Suppress mysqli error display, we'll handle it ourselves
-        mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+        // Build connection string for PostgreSQL
+        $connectionString = "host=$host port=$port dbname=$db user=$user password=$pass";
+        
+        // Suppress error display, we'll handle it ourselves
+        error_reporting(E_ALL);
         
         try {
-            $this->conn = new mysqli($host, $user, $pass, $db, $port);
+            $this->conn = pg_connect($connectionString);
             
-            if ($this->conn->connect_error) {
-                throw new Exception("Database connection failed: " . $this->conn->connect_error);
+            if (!$this->conn) {
+                throw new Exception("Database connection failed");
             }
             
-            // Set charset to UTF-8
-            $this->conn->set_charset("utf8mb4");
+            // Set client encoding to UTF-8
+            pg_set_client_encoding($this->conn, "UTF8");
             
             if (defined('DEBUG_MODE') && DEBUG_MODE) {
-                error_log("Database connection established successfully");
+                error_log("PostgreSQL database connection established successfully");
             }
             
         } catch (Exception $e) {
             if (defined('DEBUG_MODE') && DEBUG_MODE) {
                 error_log("Database Connection Error: " . $e->getMessage());
             }
-            throw $e; // Re-throw to let the calling code handle it
+            throw $e;
         }
     }
     
@@ -69,19 +64,62 @@ class Database {
     }
     
     /**
-     * Get the mysqli connection
+     * Get the pg connection
      */
     public function getConnection() {
         return $this->conn;
     }
     
     /**
+     * Convert MySQL-style ? placeholders to PostgreSQL $1, $2, etc.
+     */
+    private function convertPlaceholders($sql, $params) {
+        if (empty($params)) {
+            return [$sql, $params];
+        }
+        
+        // Check if SQL contains ? placeholders
+        if (strpos($sql, '?') === false) {
+            return [$sql, $params];
+        }
+        
+        // Replace ? with $1, $2, $3, etc.
+        $paramIndex = 1;
+        $newSql = '';
+        for ($i = 0; $i < strlen($sql); $i++) {
+            if ($sql[$i] === '?') {
+                $newSql .= '$' . $paramIndex;
+                $paramIndex++;
+            } else {
+                $newSql .= $sql[$i];
+            }
+        }
+        
+        return [$newSql, $params];
+    }
+    
+    /**
      * Execute a query and return all results
      */
     public function fetchAll($sql, $params = []) {
-        $stmt = $this->executeStatement($sql, $params);
-        $rows = $this->fetchRowsFromStatement($stmt);
-        $stmt->close();
+        // Convert ? placeholders to $1, $2, etc. for PostgreSQL
+        list($sql, $params) = $this->convertPlaceholders($sql, $params);
+        
+        if (empty($params)) {
+            $result = pg_query($this->conn, $sql);
+        } else {
+            $result = pg_query_params($this->conn, $sql, $params);
+        }
+        
+        if (!$result) {
+            throw new Exception("Query failed: " . pg_last_error($this->conn) . " SQL: " . $sql);
+        }
+        
+        $rows = [];
+        while ($row = pg_fetch_assoc($result)) {
+            $rows[] = $row;
+        }
+        pg_free_result($result);
         return $rows;
     }
     
@@ -89,9 +127,7 @@ class Database {
      * Execute a query and return single result
      */
     public function fetchOne($sql, $params = []) {
-        $stmt = $this->executeStatement($sql, $params);
-        $rows = $this->fetchRowsFromStatement($stmt);
-        $stmt->close();
+        $rows = $this->fetchAll($sql, $params);
         return $rows[0] ?? null;
     }
     
@@ -103,26 +139,25 @@ class Database {
         $values = array_values($data);
         
         $columnList = implode(', ', $columns);
-        $placeholders = implode(', ', array_fill(0, count($values), '?'));
         
-        $sql = "INSERT INTO $table ($columnList) VALUES ($placeholders)";
+        // Create placeholders: $1, $2, $3, etc.
+        $placeholders = [];
+        for ($i = 1; $i <= count($values); $i++) {
+            $placeholders[] = '$' . $i;
+        }
+        $placeholders = implode(', ', $placeholders);
         
-        $stmt = $this->conn->prepare($sql);
+        $sql = "INSERT INTO $table ($columnList) VALUES ($placeholders) RETURNING id";
         
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
+        $result = pg_query_params($this->conn, $sql, $values);
+        
+        if (!$result) {
+            throw new Exception("Insert failed: " . pg_last_error($this->conn) . " SQL: " . $sql);
         }
         
-        // Bind parameters dynamically
-        $types = str_repeat('s', count($values));
-        $stmt->bind_param($types, ...$values);
-        
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
-        }
-        
-        $insertId = $stmt->insert_id;
-        $stmt->close();
+        $row = pg_fetch_assoc($result);
+        $insertId = $row['id'] ?? null;
+        pg_free_result($result);
         
         if (defined('DEBUG_MODE') && DEBUG_MODE) {
             error_log("Insert successful. Table: $table, Insert ID: $insertId");
@@ -136,31 +171,28 @@ class Database {
      */
     public function update($table, $data, $where, $whereParams = []) {
         $setParts = [];
+        $paramIndex = 1;
+        
         foreach (array_keys($data) as $column) {
-            $setParts[] = "$column = ?";
+            $setParts[] = "$column = $" . $paramIndex;
+            $paramIndex++;
         }
         
         $setClause = implode(', ', $setParts);
-        $sql = "UPDATE $table SET $setClause WHERE $where";
-        
-        $stmt = $this->conn->prepare($sql);
-        
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
-        }
         
         $values = array_values($data);
         $allParams = array_merge($values, $whereParams);
         
-        $types = str_repeat('s', count($allParams));
-        $stmt->bind_param($types, ...$allParams);
+        $sql = "UPDATE $table SET $setClause WHERE $where";
         
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
+        $result = pg_query_params($this->conn, $sql, $allParams);
+        
+        if (!$result) {
+            throw new Exception("Update failed: " . pg_last_error($this->conn) . " SQL: " . $sql);
         }
         
-        $affectedRows = $stmt->affected_rows;
-        $stmt->close();
+        $affectedRows = pg_affected_rows($result);
+        pg_free_result($result);
         
         if (defined('DEBUG_MODE') && DEBUG_MODE) {
             error_log("Update successful. Table: $table, Affected rows: $affectedRows");
@@ -175,21 +207,14 @@ class Database {
     public function delete($table, $where, $params = []) {
         $sql = "DELETE FROM $table WHERE $where";
         
-        $stmt = $this->conn->prepare($sql);
+        $result = pg_query_params($this->conn, $sql, $params);
         
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
+        if (!$result) {
+            throw new Exception("Delete failed: " . pg_last_error($this->conn) . " SQL: " . $sql);
         }
         
-        $types = str_repeat('s', count($params));
-        $stmt->bind_param($types, ...$params);
-        
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
-        }
-        
-        $affectedRows = $stmt->affected_rows;
-        $stmt->close();
+        $affectedRows = pg_affected_rows($result);
+        pg_free_result($result);
         
         if (defined('DEBUG_MODE') && DEBUG_MODE) {
             error_log("Delete successful. Table: $table, Affected rows: $affectedRows");
@@ -199,85 +224,20 @@ class Database {
     }
     
     /**
-     * Execute a prepared statement
-     */
-    private function executeStatement($sql, $params = []) {
-        $stmt = $this->conn->prepare($sql);
-        
-        if (!$stmt) {
-            throw new Exception("Prepare failed: " . $this->conn->error . " SQL: " . $sql);
-        }
-        
-        if (!empty($params)) {
-            $types = str_repeat('s', count($params));
-            $stmt->bind_param($types, ...$params);
-        }
-        
-        if (!$stmt->execute()) {
-            throw new Exception("Execute failed: " . $stmt->error . " SQL: " . $sql);
-        }
-        
-        return $stmt;
-    }
-
-    /**
-     * Fetch rows from statement with mysqlnd fallback support.
-     * Some shared hosts do not support mysqli_stmt::get_result().
-     */
-    private function fetchRowsFromStatement($stmt) {
-        // Preferred path when mysqlnd is available
-        if (method_exists($stmt, 'get_result')) {
-            $result = $stmt->get_result();
-            if ($result !== false) {
-                $rows = [];
-                while ($row = $result->fetch_assoc()) {
-                    $rows[] = $row;
-                }
-                return $rows;
-            }
-        }
-
-        // Fallback path for hosts without mysqlnd
-        $metadata = $stmt->result_metadata();
-        if ($metadata === false) {
-            return [];
-        }
-
-        $row = [];
-        $bindParams = [];
-
-        while ($field = $metadata->fetch_field()) {
-            $row[$field->name] = null;
-            $bindParams[] = &$row[$field->name];
-        }
-
-        call_user_func_array([$stmt, 'bind_result'], $bindParams);
-
-        $rows = [];
-        while ($stmt->fetch()) {
-            $currentRow = [];
-            foreach ($row as $key => $value) {
-                $currentRow[$key] = $value;
-            }
-            $rows[] = $currentRow;
-        }
-
-        $metadata->free();
-        return $rows;
-    }
-    
-    /**
      * Get last insert ID
      */
     public function getLastInsertId() {
-        return $this->conn->insert_id;
+        $result = pg_query($this->conn, "SELECT lastval() as id");
+        $row = pg_fetch_assoc($result);
+        pg_free_result($result);
+        return $row['id'] ?? null;
     }
     
     /**
      * Get affected rows
      */
     public function getAffectedRows() {
-        return $this->conn->affected_rows;
+        return pg_affected_rows($this->conn);
     }
     
     /**
@@ -285,19 +245,18 @@ class Database {
      */
     public function close() {
         if ($this->conn) {
-            $this->conn->close();
+            pg_close($this->conn);
         }
     }
     
     // Prevent cloning
     private function __clone() {}
     
-    // Prevent unserialization
+    // Prevent unerialization
     public function __wakeup() {
         throw new Exception("Cannot unserialize singleton");
     }
 }
 
 // DO NOT create a global $conn here - let the Database class handle all connections
-// This was causing duplicate connection issues
 ?>

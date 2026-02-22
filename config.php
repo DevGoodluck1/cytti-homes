@@ -22,20 +22,23 @@ ini_set('log_errors', 1);
 date_default_timezone_set('Africa/Nairobi');
 
 // ============================================================
-// SESSION FIX FOR INFINITYFREE
+// SESSION FIX FOR RENDER / CLOUD DEPLOYMENT
 // ============================================================
-// Set proper session save path for InfinityFree
-$session_save_path = '/tmp';
-if (!is_dir($session_save_path) || !is_writable($session_save_path)) {
-    // Try alternative paths
-    $alt_paths = [
-        sys_get_temp_dir(),
-        __DIR__ . '/sessions'
-    ];
-    foreach ($alt_paths as $path) {
-        if (is_dir($path) && is_writable($path)) {
-            $session_save_path = $path;
-            break;
+// For Render and cloud platforms, use database-backed sessions or proper file handling
+$session_save_path = session_save_path();
+
+// Try to use /tmp or render's ephemeral disk
+if (empty($session_save_path) || !is_dir($session_save_path) || !is_writable($session_save_path)) {
+    // Use system temp directory
+    $session_save_path = sys_get_temp_dir();
+    if (!is_dir($session_save_path) || !is_writable($session_save_path)) {
+        // Last resort: try creating a sessions directory
+        $session_dir = __DIR__ . '/sessions';
+        if (!is_dir($session_dir)) {
+            @mkdir($session_dir, 0755, true);
+        }
+        if (is_dir($session_dir) && is_writable($session_dir)) {
+            $session_save_path = $session_dir;
         }
     }
 }
@@ -44,26 +47,20 @@ ini_set('session.save_handler', 'files');
 ini_set('session.save_path', $session_save_path);
 ini_set('session.cookie_httponly', 1);
 ini_set('session.use_strict_mode', 1);
-ini_set('session.cookie_samesite', 'Strict');
+// Use Lax for cross-domain redirects
+ini_set('session.cookie_samesite', 'Lax');
+// Increase session cookie lifetime
+ini_set('session.cookie_lifetime', 86400); // 24 hours
+ini_set('session.gc_maxlifetime', 86400);
 
 // Start session if not already started
 if (session_status() === PHP_SESSION_NONE) {
     session_start();
 }
 
-// InfinityFree Database Credentials
-$host = "sql213.infinityfree.com";
-$user = "if0_41198744";
-$pass = "PD84JL9Doz";
-$db   = "if0_41198744_cytti";
-$port = 3306;
-
-// Define constants for db_connect.php (PDO)
-define('DB_HOST', $host);
-define('DB_USER', $user);
-define('DB_PASS', $pass);
-define('DB_NAME', $db);
-define('DB_PORT', $port);
+// Database credentials are now handled via environment variables in db_connect.php
+// For Docker/Render deployment, set these environment variables:
+// DB_HOST, DB_USER, DB_PASS, DB_NAME, DB_PORT
 
 // Database connection is now handled by db_connect.php
 // DO NOT create a global $conn here - let the Database class handle it
