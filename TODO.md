@@ -1,17 +1,12 @@
-# TODO - PostgreSQL Extension Fix
+# TODO - Fix Database Error & Signup Issues
 
-## Problem
-- Error: `Fatal error: Uncaught Error: Call to undefined function pg_connect()`
-- Cause: PostgreSQL PHP extension was not installed on Render server
+## Tasks:
+- [x] Create PostgreSQL-compatible database schema (database_pg.sql)
+- [x] Update database.sql with PostgreSQL syntax (AUTO_INCREMENT → SERIAL)
+- [x] Create setup file (setup_db_pg.php) for PostgreSQL setup
+- [x] Create users table in Supabase (completed by user)
+- [ ] Test the signup process to verify fix
 
-## Solution Applied
-- Fixed corrupted Dockerfile with proper PostgreSQL extension installation
-- Added `pgsql` and `pdo_pgsql` extensions for Supabase connection
-
-## Next Steps
-1. Rebuild Docker image on Render to apply changes
-2. Push the updated Dockerfile to your repository
-3. Trigger a new deployment on Render
-
-## Testing
-After deployment, test the connection by visiting signup or login pages.
+## Issues Found:
+1. Database schema uses MySQL syntax (INT AUTO_INCREMENT) but connects to PostgreSQL - FIXED by creating users table in Supabase
+2. Success notification already implemented in login.php
