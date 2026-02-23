@@ -4,15 +4,14 @@
  * Using PostgreSQL with a Database Singleton Class
  * 
  * IMPORTANT: Include this file AFTER config.php
- * Uses environment variables for database credentials
  */
 
-// Get database credentials from environment variables (for Supabase)
-$host = getenv('DB_HOST') ?: 'aws-0-eu-west-1.pooler.supabase.com';
-$user = getenv('DB_USER') ?: 'postgres';
-$pass = getenv('DB_PASS') ?: 'Stalker@2024##';
-$db   = getenv('DB_NAME') ?: 'postgres';
-$port = (int)(getenv('DB_PORT')) ?: 6543;
+// Get database credentials from Supabase
+$host = 'db.apoofohrjorkkfmbygfa.supabase.co';
+$port = 5432;
+$db   = 'postgres';
+$user = 'postgres';
+$pass = 'Stalker@2024##';
 
 /**
  * Database Singleton Class for PostgreSQL
@@ -24,6 +23,11 @@ class Database {
     
     private function __construct() {
         global $host, $user, $pass, $db, $port;
+        
+        // Check if PostgreSQL extension is available
+        if (!function_exists('pg_connect')) {
+            throw new Exception("PostgreSQL extension is not enabled. Please enable pdo_pgsql and pgsql in your php.ini file.");
+        }
         
         // Build connection string for PostgreSQL
         $connectionString = "host=$host port=$port dbname=$db user=$user password=$pass";
@@ -83,15 +87,26 @@ class Database {
             return [$sql, $params];
         }
         
-        // Replace ? with $1, $2, $3, etc.
-        $paramIndex = 1;
+        // Replace ? with $1, $2, $3, etc. using preg_replace_callback
+        $paramCount = count($params);
+        $placeholders = [];
+        for ($i = 1; $i <= $paramCount; $i++) {
+            $placeholders[] = '$' . $i;
+        }
+        
+        // Replace all ? with the correct placeholders
+        $newSql = preg_replace('/\?/', '?', $sql);
+        $newSql = implode($placeholders, explode('?', $newSql, $paramCount + 1));
+        // Actually, let's use a simpler approach
         $newSql = '';
-        for ($i = 0; $i < strlen($sql); $i++) {
-            if ($sql[$i] === '?') {
-                $newSql .= '$' . $paramIndex;
+        $paramIndex = 0;
+        $chars = str_split($sql);
+        foreach ($chars as $char) {
+            if ($char === '?' && $paramIndex < count($params)) {
+                $newSql .= '$' . ($paramIndex + 1);
                 $paramIndex++;
             } else {
-                $newSql .= $sql[$i];
+                $newSql .= $char;
             }
         }
         
@@ -105,6 +120,11 @@ class Database {
         // Convert ? placeholders to $1, $2, etc. for PostgreSQL
         list($sql, $params) = $this->convertPlaceholders($sql, $params);
         
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log("SQL after conversion: " . $sql);
+            error_log("Params: " . print_r($params, true));
+        }
+        
         if (empty($params)) {
             $result = pg_query($this->conn, $sql);
         } else {
@@ -112,7 +132,8 @@ class Database {
         }
         
         if (!$result) {
-            throw new Exception("Query failed: " . pg_last_error($this->conn) . " SQL: " . $sql);
+            $error = pg_last_error($this->conn);
+            throw new Exception("Query failed: " . $error . " SQL: " . $sql);
         }
         
         $rows = [];
@@ -149,10 +170,16 @@ class Database {
         
         $sql = "INSERT INTO $table ($columnList) VALUES ($placeholders) RETURNING id";
         
+        if (defined('DEBUG_MODE') && DEBUG_MODE) {
+            error_log("Insert SQL: " . $sql);
+            error_log("Insert values: " . print_r($values, true));
+        }
+        
         $result = pg_query_params($this->conn, $sql, $values);
         
         if (!$result) {
-            throw new Exception("Insert failed: " . pg_last_error($this->conn) . " SQL: " . $sql);
+            $error = pg_last_error($this->conn);
+            throw new Exception("Insert failed: " . $error . " SQL: " . $sql);
         }
         
         $row = pg_fetch_assoc($result);
