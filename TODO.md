@@ -1,19 +1,17 @@
-# TODO: Fix Login/Signup Database Connection Issue
+# TODO - PostgreSQL Extension Fix
 
-## Problem Analysis
-- Signup works: User data is saved to database
-- Sign-in failing after logging in: Session not persisting
+## Problem
+- Error: `Fatal error: Uncaught Error: Call to undefined function pg_connect()`
+- Cause: PostgreSQL PHP extension was not installed on Render server
 
-## Root Causes Identified
-1. **login.html** has incorrect link: `<a href="signup.html">` should be `<a href="signup.php">`
-2. **login.html** has a form that may have JavaScript issues
-3. Possible session handling issue between signup and login
+## Solution Applied
+- Fixed corrupted Dockerfile with proper PostgreSQL extension installation
+- Added `pgsql` and `pdo_pgsql` extensions for Supabase connection
 
-## Fix Plan
-- [ ] Fix login.html - change signup link from signup.html to signup.php
-- [ ] Ensure login_process.php is working correctly
-- [ ] Verify session handling in dashboard.php
-- [ ] Test the flow
+## Next Steps
+1. Rebuild Docker image on Render to apply changes
+2. Push the updated Dockerfile to your repository
+3. Trigger a new deployment on Render
 
-## Files to Edit
-- login.html (link fix)
+## Testing
+After deployment, test the connection by visiting signup or login pages.
